@@ -133,7 +133,7 @@ fn main() {
     let mut worksheets = workbook.sheet_names().except("Couldn't get worksheets");
     worksheets.sort();
     for worksheet in worksheets {
-        if worksheet == "Rider" { continue; }
+        if worksheet == "Overview" { continue; }
         let workout = parse_workout(&mut workbook, &worksheet);
         println!("{}", workout);
         write_erg_file(workout);
