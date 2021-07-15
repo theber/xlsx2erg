@@ -7,7 +7,7 @@ Element and probably also to other bike computers.
 ## Usage
 
 Create workouts to your heart's content. There are already quite a few examples.
-The following command will convert the XLSX sheets to erg files.
+The following command will convert the XLSX workbooks to `erg` files.
 
 ```
 cargo run -- <xlsx_file>
