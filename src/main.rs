@@ -19,11 +19,11 @@ struct WorkoutData {
 /// `erg` file
 #[derive(Default, Debug)]
 struct Interval {
-    /// time in minutes the interval takes
+    /// Time in minutes the interval takes
     duration: f64,
-    /// average watts of the interval
+    /// Average watts of the interval
     watt: f64,
-    /// approximation of the intensity factor, not 100% accurate when the 
+    /// Approximation of the intensity factor, not 100% accurate when the 
     /// interval ramps up or down, but close enough
     intensity_factor: f64,
     /// Training Stress Score of the interval
@@ -31,6 +31,8 @@ struct Interval {
 }
 
 impl Interval {
+    /// Creates a new `Interval`, requires to consecutive `WorkoutData` points 
+    /// and the current `FTP` as parameters.
     fn new(wd1: &WorkoutData, wd2: &WorkoutData, ftp: f64) -> Self {
         let duration = wd2.time - wd1.time;
         let watt = (wd1.intensity + wd2.intensity) / 2.0 * ftp;
@@ -45,6 +47,9 @@ impl Interval {
     }
 }
 
+/// The `Workout` struct represents the complete workout and contains 
+/// the current `FTP`, `file_name`, the `description` of the workout, 
+/// `Vectors` of `WorkoutData` and `Interval`s, as well as the total `TSS`.
 #[derive(Default, Debug)]
 struct Workout {
     ftp: f64,
@@ -56,12 +61,15 @@ struct Workout {
 }
 
 impl fmt::Display for Workout {
+    /// Custom formatting so that it a quick summary of the workout can be 
+    /// printed to console after it is converted
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, r"{:24} | TSS: {:5} | {}", 
                self.file_name, self.tss as u64, self.description)
     }
 }
 
+/// Writes the parsed `Workout` to an `erg` file.
 fn write_erg_file(workout: Workout) {
         let path = Path::new(&workout.file_name);
         let mut file = File::create(&path).expect("Couldn't open file");
@@ -77,13 +85,16 @@ MINUTES WATTS
 ", workout.description, workout.file_name, workout.ftp);
 
         for data in workout.workout_data {
-            file_content.push_str(&format!("{:.2}\t{}\n", data.time, (data.intensity * workout.ftp) as u64));
+            file_content.push_str(&format!("{:.2}\t{}\n", 
+                data.time, (data.intensity * workout.ftp) as u64));
         }
 
         file_content.push_str("[END COURSE DATA]\n");
         file.write_all(file_content.as_bytes()).expect("Couldn't write file");
 }
 
+/// Parses the workbook and iterates over each worksheet. All worksheets 
+/// are then converted to `erg` files except the `Overview` worksheet.
 fn parse_workout(workbook: &mut Excel, worksheet: &str) -> Workout {
 
     let mut workout = Workout{.. Default::default()};
@@ -124,7 +135,8 @@ fn parse_workout(workbook: &mut Excel, worksheet: &str) -> Workout {
         for i in 0..workout.workout_data.len() {
             if i % 2 == 0 {
                 let interval = 
-                    Interval::new(&workout.workout_data[i], &workout.workout_data[i+1], workout.ftp);
+                    Interval::new(&workout.workout_data[i], 
+                                  &workout.workout_data[i+1], workout.ftp);
                 tss += interval.tss;
                 workout.intervals.push(interval);
             }
@@ -135,13 +147,20 @@ fn parse_workout(workbook: &mut Excel, worksheet: &str) -> Workout {
 }
 
 fn main() {
+    // Check argument
     let args: Vec<String> = env::args().collect();
     if args.len() < 2 {
         panic!("Usage: {} <file>", args[0]);
     }
-    let mut workbook = Excel::open(args[1].to_owned()).expect("Couldn't open Excel file");
-    let mut worksheets = workbook.sheet_names().expect("Couldn't get worksheets");
+
+    // open workbook and get worksheets
+    let mut workbook = Excel::open(args[1].to_owned())
+        .expect("Couldn't open Excel file");
+    let mut worksheets = workbook.sheet_names()
+        .expect("Couldn't get worksheets");
     worksheets.sort();
+
+    // loop over worksheets, parse content and write `erg` files
     for worksheet in worksheets {
         if worksheet == "Overview" { continue; }
         let workout = parse_workout(&mut workbook, &worksheet);
