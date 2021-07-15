@@ -6,17 +6,27 @@ use std::path::Path;
 use office::{Excel, DataType};
 
 
+/// `WorkoutData` represents a single row in the xlsx worksheet.
 #[derive(Default, Debug)]
 struct WorkoutData {
+    /// Timestamp in minutes of the data point
     time: f64,
+    /// Relative intensity at `time` in percent of FTP
     intensity: f64,
 }
 
+/// `Interval` represents an interval which is created in the 
+/// `erg` file
 #[derive(Default, Debug)]
 struct Interval {
+    /// time in minutes the interval takes
     duration: f64,
+    /// average watts of the interval
     watt: f64,
+    /// approximation of the intensity factor, not 100% accurate when the 
+    /// interval ramps up or down, but close enough
     intensity_factor: f64,
+    /// Training Stress Score of the interval
     tss: f64,
 }
 
@@ -129,8 +139,8 @@ fn main() {
     if args.len() < 2 {
         panic!("Usage: {} <file>", args[0]);
     }
-    let mut workbook = Excel::open(args[1].to_owned()).except("Couldn't open Excel file");
-    let mut worksheets = workbook.sheet_names().except("Couldn't get worksheets");
+    let mut workbook = Excel::open(args[1].to_owned()).expect("Couldn't open Excel file");
+    let mut worksheets = workbook.sheet_names().expect("Couldn't get worksheets");
     worksheets.sort();
     for worksheet in worksheets {
         if worksheet == "Overview" { continue; }
